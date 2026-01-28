@@ -9,12 +9,13 @@ export const createClient = async () => {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Supabase environment variables are missing')
+    console.error('SERVER_SUPABASE_ENV_MISSING: NEXT_PUBLIC_SUPABASE_URL ou NEXT_PUBLIC_SUPABASE_ANON_KEY não definidas')
+    // Retornar um cliente "dummy" ou vazio para não crashar a app durante o rendering do layout
   }
 
   return createServerClient<Database>(
-    supabaseUrl,
-    supabaseAnonKey,
+    supabaseUrl || '',
+    supabaseAnonKey || '',
     {
       cookies: {
         getAll() {

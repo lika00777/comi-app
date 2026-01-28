@@ -20,7 +20,8 @@ export default async function DashboardLayout({
 }) {
   const supabase = await createClient()
   
-  const { data: { user } } = await supabase.auth.getUser()
+  const authRes = await supabase.auth.getUser()
+  const user = authRes.data?.user
   
   if (!user) {
     redirect('/entrar')

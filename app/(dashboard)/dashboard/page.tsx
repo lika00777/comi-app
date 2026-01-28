@@ -13,7 +13,8 @@ type Pagamento = Database['public']['Tables']['pagamentos_recebidos']['Row']
 export default async function DashboardPage() {
   const supabase = await createClient()
   
-  const { data: { user } } = await supabase.auth.getUser()
+  const authRes = await supabase.auth.getUser()
+  const user = authRes.data?.user
 
   if (!user) return null
   
