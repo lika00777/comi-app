@@ -84,8 +84,8 @@ export default function VendaForm({ vendaInicial, modoEdicao = false }: VendaFor
         if (resClientes.error) throw resClientes.error
         if (resTipos.error) throw resTipos.error
         
-        setClientes(resClientes.data || [])
-        setTiposArtigo(resTipos.data || [])
+        setClientes((resClientes.data as any) || [])
+        setTiposArtigo((resTipos.data as any) || [])
         
         // Se modo edição, carregar linhas e recalcular campos de UI
         if (modoEdicao && vendaInicial && vendaInicial.linhas) {
