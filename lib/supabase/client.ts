@@ -6,12 +6,31 @@ export const createClient = () => {
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.warn('Supabase URL or Anon Key is missing')
-    // Retornamos o cliente mesmo assim, o erro será apanhado na chamada
+    console.warn('BROWSER_SUPABASE_ENV_MISSING: Variáveis de ambiente do Supabase não encontradas.')
+    return {
+      auth: {
+        onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+        getUser: async () => ({ data: { user: null }, error: null }),
+        signInWithPassword: async () => ({ error: new Error('Supabase no configurado') }),
+        resetPasswordForEmail: async () => ({ error: new Error('Supabase no configurado') }),
+        updateUser: async () => ({ error: new Error('Supabase no configurado') }),
+      },
+      from: () => ({
+        select: () => ({
+          order: () => ({
+            eq: () => ({
+              then: (cb: any) => cb({ data: [], error: null })
+            }),
+            then: (cb: any) => cb({ data: [], error: null })
+          }),
+          then: (cb: any) => cb({ data: [], error: null })
+        }),
+      })
+    } as any
   }
 
   return createBrowserClient<Database>(
-    supabaseUrl || '',
-    supabaseAnonKey || ''
+    supabaseUrl,
+    supabaseAnonKey
   )
 }
