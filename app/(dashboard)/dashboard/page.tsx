@@ -26,14 +26,14 @@ export default async function DashboardPage() {
     .select('*')
     .order('data_venda', { ascending: true })
   
-  const vendas: Venda[] = vendasResult || []
+  const vendas: Venda[] = (vendasResult as any) || []
   
   // Buscar Pagamentos
   const { data: pagamentosResult } = await supabase
     .from('pagamentos_recebidos')
     .select('*')
 
-  const pagamentos: Pagamento[] = pagamentosResult || []
+  const pagamentos: Pagamento[] = (pagamentosResult as any) || []
 
   // Buscar Linhas de Venda para gráfico de Tipos
   const { data: linhasResult } = await supabase
@@ -44,7 +44,7 @@ export default async function DashboardPage() {
       tipos_artigo (nome)
     `)
   
-  const linhas = linhasResult || []
+  const linhas = (linhasResult as any) || []
   
   // --- Cálculos de KPIs ---
   const vendasData = vendas

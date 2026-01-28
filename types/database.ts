@@ -233,60 +233,27 @@ export interface ComissaoMensal {
 // TIPOS DO SUPABASE CLIENT
 // =====================================================
 
-export interface Database {
+export type Database = {
   public: {
     Tables: {
-      utilizadores: {
-        Row: Utilizador
-        Insert: Omit<Utilizador, 'id' | 'criado_em' | 'atualizado_em'>
-        Update: Partial<Omit<Utilizador, 'id' | 'criado_em' | 'atualizado_em'>>
-      }
-      tipos_artigo: {
-        Row: TipoArtigo
-        Insert: Omit<TipoArtigo, 'id' | 'criado_em' | 'atualizado_em'>
-        Update: Partial<Omit<TipoArtigo, 'id' | 'utilizador_id' | 'criado_em' | 'atualizado_em'>>
-      }
-      clientes: {
-        Row: Cliente
-        Insert: Omit<Cliente, 'id' | 'criado_em' | 'atualizado_em'>
-        Update: Partial<Omit<Cliente, 'id' | 'utilizador_id' | 'criado_em' | 'atualizado_em'>>
-      }
-      vendas: {
-        Row: Venda
-        Insert: Omit<Venda, 'id' | 'valor_total' | 'lucro_total' | 'comissao_total' | 'criado_em' | 'atualizado_em'>
-        Update: Partial<Omit<Venda, 'id' | 'utilizador_id' | 'criado_em' | 'atualizado_em'>>
-      }
-      linhas_venda: {
-        Row: LinhaVenda
-        Insert: Omit<LinhaVenda, 'id' | 'lucro_calculado' | 'comissao_calculada' | 'criado_em' | 'atualizado_em'>
-        Update: Partial<Omit<LinhaVenda, 'id' | 'venda_id' | 'criado_em' | 'atualizado_em'>>
-      }
-      pagamentos_recebidos: {
-        Row: PagamentoRecebido
-        Insert: Omit<PagamentoRecebido, 'id' | 'criado_em' | 'atualizado_em'>
-        Update: Partial<Omit<PagamentoRecebido, 'id' | 'utilizador_id' | 'criado_em' | 'atualizado_em'>>
-      }
-      alertas: {
-        Row: Alerta
-        Insert: Omit<Alerta, 'id' | 'criado_em'>
-        Update: Partial<Omit<Alerta, 'id' | 'utilizador_id' | 'criado_em'>>
+      [key: string]: {
+        Row: any
+        Insert: any
+        Update: any
+        Relationships: any[]
       }
     }
-    Views: {}
+    Views: {
+      [key: string]: any
+    }
     Functions: {
-      calcular_lucro_linha: {
-        Args: { linha: LinhaVenda }
-        Returns: number
-      }
-      calcular_comissao_linha: {
-        Args: { linha: LinhaVenda }
-        Returns: number
-      }
+      [key: string]: any
     }
     Enums: {
-      estado_venda: EstadoVenda
-      metodo_calculo: MetodoCalculo
-      tipo_alerta: TipoAlerta
+      [key: string]: any
+    }
+    CompositeTypes: {
+      [key: string]: any
     }
   }
 }

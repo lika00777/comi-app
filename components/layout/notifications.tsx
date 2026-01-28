@@ -33,7 +33,7 @@ export function Notifications() {
       .limit(10)
 
     if (data) {
-      setAlertas(data)
+      setAlertas(data as any)
       setUnreadCount(data.length)
     }
   }

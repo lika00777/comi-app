@@ -30,15 +30,15 @@ export default function ValidacaoVendaModal({ data, onClose, onConfirm }: Valida
         supabase.from('tipos_artigo').select('*').eq('ativo', true).order('nome')
       ])
 
-      const allClientes = resClientes.data || []
-      const allTipos = resTipos.data || []
+      const allClientes: Cliente[] = (resClientes.data as any) || []
+      const allTipos: TipoArtigo[] = (resTipos.data as any) || []
       
       setClientes(allClientes)
       setTiposArtigo(allTipos)
 
       // Tentativa de Matching Automático de Cliente
       if (data.cliente_nome) {
-        const match = allClientes.find(c => 
+        const match = allClientes.find((c: Cliente) => 
           c.nome.toLowerCase().includes(data.cliente_nome.toLowerCase()) ||
           data.cliente_nome.toLowerCase().includes(c.nome.toLowerCase())
         )
@@ -47,7 +47,7 @@ export default function ValidacaoVendaModal({ data, onClose, onConfirm }: Valida
 
       // Matching de Itens
       const initialMappedItens = data.itens.map((item: any) => {
-        const tipoMatch = allTipos.find(t => 
+        const tipoMatch = allTipos.find((t: TipoArtigo) => 
           t.nome.toLowerCase().includes(item.tipo_sugerido?.toLowerCase() || '') ||
           item.artigo.toLowerCase().includes(t.nome.toLowerCase())
         )

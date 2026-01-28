@@ -44,7 +44,7 @@ export default function PagamentosPage() {
         .order('data_pagamento', { ascending: false })
 
       if (pagError) throw pagError
-      setPagamentos(pagamentosData || [])
+      setPagamentos((pagamentosData as any) || [])
 
       // 2. Buscar Faturas Pagas (pelos clientes) mas ainda não liquidadas
       const { data: pendentesData, error: venError } = await supabase

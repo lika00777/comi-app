@@ -103,8 +103,8 @@ export default function RelatoriosPage() {
         linhas_venda: v.linhas_venda || []
       }))
 
-      setVendas(vendasFormatadas)
-      setPagamentos(pagamentosData || [])
+      setVendas(vendasFormatadas as any)
+      setPagamentos((pagamentosData as any) || [])
       
     } catch (err) {
       console.error('Erro ao carregar relatório:', err)

@@ -11,7 +11,7 @@ export default async function EditarVendaPage({ params }: PageProps) {
   const supabase = await createClient()
 
   // Fetch venda com linhas e cliente
-  const { data: venda, error } = await supabase
+  const { data, error } = await supabase
     .from('vendas')
     .select(`
       *,
@@ -20,6 +20,8 @@ export default async function EditarVendaPage({ params }: PageProps) {
     `)
     .eq('id', id)
     .single()
+
+  const venda = data as any
 
   if (error || !venda) {
     notFound()

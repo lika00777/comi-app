@@ -57,8 +57,8 @@ export default function ClientesPage() {
         .order('criado_em', { ascending: false })
 
       if (error) throw error
-      setClientes(data || [])
-      setFilteredClientes(data || [])
+      setClientes((data as any) || [])
+      setFilteredClientes((data as any) || [])
     } catch (err: any) {
       setError(err.message)
     } finally {

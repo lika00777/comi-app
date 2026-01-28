@@ -39,7 +39,7 @@ export default function TiposArtigoPage() {
         .order('criado_em', { ascending: false })
 
       if (error) throw error
-      setTipos(data || [])
+      setTipos((data as any) || [])
     } catch (err: any) {
       setError(err.message)
     } finally {

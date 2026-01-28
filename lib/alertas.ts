@@ -9,14 +9,15 @@ export async function verificarAlertasCobranca(userId: string) {
   const dataLimiteStr = dataLimite.toISOString().split('T')[0]
 
   // Buscar vendas pendentes antigas
-  const { data: vendasAtrasadas } = await supabase
+  const resVendasAtrasadas = await supabase
     .from('vendas')
     .select('id, numero_fatura, data_venda, clientes(nome), valor_total')
     .eq('utilizador_id', userId)
     .neq('estado', 'pago')
     .lt('data_venda', dataLimiteStr)
 
-  if (!vendasAtrasadas || vendasAtrasadas.length === 0) return
+  if (!resVendasAtrasadas.data || resVendasAtrasadas.data.length === 0) return
+  const vendasAtrasadas = resVendasAtrasadas.data as any[]
 
   // Para cada venda atrasada, verificar se já existe alerta
   for (const venda of vendasAtrasadas) {
@@ -28,13 +29,15 @@ export async function verificarAlertasCobranca(userId: string) {
     // Melhor abordagem: Criar um ID único na mensagem ou contexto para verificação
     // Vou confiar que se já existe um alerta ativo, não recrio.
     
-    const { data: alertasExistentes } = await supabase
-      .from('alertas')
-      .select('*')
-      .eq('utilizador_id', userId)
-      .eq('tipo', 'cobranca')
-      .eq('lido', false)
-      .contains('dados_contexto', { venda_id: venda.id })
+      const { data: resAlertas } = await supabase
+        .from('alertas')
+        .select('*')
+        .eq('utilizador_id', userId)
+        .eq('tipo', 'cobranca')
+        .eq('lido', false)
+        .contains('dados_contexto', { venda_id: venda.id })
+
+      const alertasExistentes = resAlertas as any[] | null
 
     if (!alertasExistentes || alertasExistentes.length === 0) {
       // Criar novo alerta
