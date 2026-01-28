@@ -69,15 +69,22 @@ export default function LoginPage() {
               disabled={loading}
             />
             
-            <Input
-              label="Password"
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              disabled={loading}
-            />
+            <div className="space-y-1">
+              <Input
+                label="Password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={loading}
+              />
+              <div className="flex justify-end">
+                <Link href="/recuperar-senha" className="text-xs text-blue-600 hover:underline">
+                  Esqueci-me da palavra-passe?
+                </Link>
+              </div>
+            </div>
           </CardContent>
           
           <CardFooter className="flex flex-col space-y-4">
