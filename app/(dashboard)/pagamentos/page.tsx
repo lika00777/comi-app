@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Alert } from '@/components/ui/alert'
 import { Select } from '@/components/ui/select'
 import { Plus, Search, Trash2, CheckCircle2, History, CreditCard, FileSpreadsheet } from 'lucide-react'
-import { formatarValor } from '@/lib/calculos/lucro'
+import { formatarValor, calcularDetalhesLinha } from '@/lib/calculos/lucro'
 import * as XLSX from 'xlsx'
 import { LinhaVenda } from '@/types/database'
 
@@ -266,42 +266,96 @@ export default function PagamentosPage() {
               <p className="text-gray-500 text-sm">Não existem faturas pagas aguardando liquidação.</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader className="bg-blue-50/50">
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Fatura</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead className="text-right text-blue-700">Comissão (€)</TableHead>
-                  <TableHead className="w-64">Marcar Mês de Recebimento</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {faturasPendentes.map((fatura) => (
-                  <TableRow key={fatura.id} className="hover:bg-blue-50/30 transition-colors">
-                    <TableCell className="text-sm text-gray-600">
-                      {new Date(fatura.data_venda).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="font-mono text-sm">{fatura.numero_fatura}</TableCell>
-                    <TableCell className="font-medium text-sm">{fatura.clientes?.nome}</TableCell>
-                    <TableCell className="text-right font-bold text-blue-600">
-                      {formatarValor(fatura.comissao_total)}
-                    </TableCell>
-                    <TableCell>
-                      <Select 
-                        options={[{ value: '', label: 'Selecionar Mês...' }, ...mesesOpcoes]}
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            liquidarComissao(fatura.id, e.target.value)
-                          }
-                        }}
-                        className="h-8 text-sm"
-                      />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <div className="space-y-4 p-4">
+              {faturasPendentes.map((fatura) => (
+                <Card key={fatura.id} className="overflow-hidden border shadow-sm">
+                  {/* Cabeçalho da Fatura */}
+                  <div className="bg-gray-50 border-b px-6 py-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-6">
+                        <div>
+                          <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Data</span>
+                          <p className="text-sm font-medium">{new Date(fatura.data_venda).toLocaleDateString()}</p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Fatura</span>
+                          <p className="font-mono text-sm">{fatura.numero_fatura}</p>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Cliente</span>
+                          <p className="text-sm font-medium">{fatura.clientes?.nome}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-6">
+                        <div className="text-right">
+                          <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Comissão Total</span>
+                          <p className="text-lg font-bold text-blue-600">{formatarValor(fatura.comissao_total)}</p>
+                        </div>
+                        <div className="w-56">
+                          <span className="text-[10px] text-gray-500 uppercase font-bold tracking-wider">Liquidar em:</span>
+                          <Select 
+                            options={[{ value: '', label: 'Selecionar Mês...' }, ...mesesOpcoes]}
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                liquidarComissao(fatura.id, e.target.value)
+                              }
+                            }}
+                            className="h-8 text-xs mt-0.5"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Linhas de Artigos */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead className="bg-gray-50/50 text-gray-500 uppercase text-[10px]">
+                        <tr>
+                          <th className="px-6 py-2 text-left font-semibold">Artigo</th>
+                          <th className="px-4 py-2 text-center font-semibold w-16">Qtd</th>
+                          <th className="px-4 py-2 text-left font-semibold w-24">Tipo</th>
+                          <th className="px-4 py-2 text-right font-semibold w-24">Custo</th>
+                          <th className="px-4 py-2 text-right font-semibold w-24">Venda</th>
+                          <th className="px-4 py-2 text-right font-semibold w-24">Margem</th>
+                          <th className="px-4 py-2 text-right font-semibold w-16">% Com.</th>
+                          <th className="px-4 py-2 text-right font-semibold w-24">Comissão</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {fatura.linhas_venda?.map((linha, idx) => {
+                          const detalhes = calcularDetalhesLinha(linha)
+                          return (
+                            <tr key={linha.id || idx} className="hover:bg-gray-50/50">
+                              <td className="px-6 py-2 font-medium text-gray-900">{linha.artigo}</td>
+                              <td className="px-4 py-2 text-center text-gray-600">{linha.quantidade}</td>
+                              <td className="px-4 py-2 text-gray-500 italic">
+                                {linha.tipo_artigo_id ? 'configurado' : '-'}
+                              </td>
+                              <td className="px-4 py-2 text-right font-mono text-gray-600">
+                                {formatarValor(detalhes.totalCusto)}
+                              </td>
+                              <td className="px-4 py-2 text-right font-mono text-gray-900 font-medium">
+                                {formatarValor(detalhes.totalVenda)}
+                              </td>
+                              <td className={`px-4 py-2 text-right font-mono ${detalhes.lucro < 0 ? 'text-red-600' : 'text-green-700'}`}>
+                                {formatarValor(detalhes.lucro)}
+                              </td>
+                              <td className="px-4 py-2 text-right text-gray-500">
+                                {linha.percentagem_comissao_snapshot}%
+                              </td>
+                              <td className="px-4 py-2 text-right font-mono font-bold text-blue-600">
+                                {formatarValor(detalhes.comissao)}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              ))}
+            </div>
           )}
         </CardContent>
       </Card>
@@ -359,27 +413,65 @@ export default function PagamentosPage() {
                         Total Recebido: <span className="font-bold text-green-700">{formatarValor(totalMes)}</span>
                       </div>
                     </div>
-                    <Table>
-                      <TableBody>
-                        {faturas.map((fatura) => (
-                          <TableRow key={fatura.id} className="hover:bg-green-50/10">
-                            <TableCell className="w-1/4 text-sm font-mono">{fatura.numero_fatura}</TableCell>
-                            <TableCell className="text-sm">{fatura.clientes?.nome}</TableCell>
-                            <TableCell className="text-right font-medium">{formatarValor(fatura.comissao_total)}</TableCell>
-                            <TableCell className="text-right w-24">
+                    <div className="divide-y divide-gray-100 pb-2">
+                      {faturas.map((fatura) => (
+                        <div key={fatura.id} className="p-4 bg-white hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-4">
+                              <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">{fatura.numero_fatura}</span>
+                              <span className="text-sm font-semibold">{fatura.clientes?.nome}</span>
+                              <span className="text-xs text-gray-500">{new Date(fatura.data_venda).toLocaleDateString()}</span>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <span className="text-sm font-bold text-green-700">{formatarValor(fatura.comissao_total)}</span>
                               <Button 
                                 variant="ghost" 
                                 size="sm" 
                                 onClick={() => desfazerLiquidacao(fatura.id)}
-                                className="h-7 text-[10px] text-gray-400 hover:text-red-500 uppercase tracking-tighter"
+                                className="h-7 text-[10px] text-gray-400 hover:text-red-500 uppercase font-bold"
                               >
                                 Desfazer
                               </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                            </div>
+                          </div>
+                          
+                          {/* Artigos em ponto pequeno no histórico */}
+                          <div className="overflow-x-auto border rounded bg-gray-50/30">
+                            <table className="w-full text-[10px]">
+                              <thead className="text-gray-400 uppercase border-b">
+                                <tr>
+                                  <th className="px-4 py-1.5 text-left">Artigo</th>
+                                  <th className="px-3 py-1.5 text-center w-12">Qtd</th>
+                                  <th className="px-3 py-1.5 text-right w-20">Venda</th>
+                                  <th className="px-3 py-1.5 text-right w-20">Margem</th>
+                                  <th className="px-3 py-1.5 text-right w-24">Comissão</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y">
+                                {fatura.linhas_venda?.map((linha, idx) => {
+                                  const detalhe = calcularDetalhesLinha(linha)
+                                  return (
+                                    <tr key={linha.id || idx}>
+                                      <td className="px-4 py-1 text-gray-600">{linha.artigo}</td>
+                                      <td className="px-3 py-1 text-center text-gray-500">{linha.quantidade}</td>
+                                      <td className="px-3 py-1 text-right font-mono tracking-tighter">
+                                        {formatarValor(detalhe.totalVenda)}
+                                      </td>
+                                      <td className="px-3 py-1 text-right font-mono tracking-tighter text-gray-600">
+                                        {formatarValor(detalhe.lucro)}
+                                      </td>
+                                      <td className="px-3 py-1 text-right font-mono font-bold text-green-700">
+                                        {formatarValor(detalhe.comissao)}
+                                      </td>
+                                    </tr>
+                                  )
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )
               })}
