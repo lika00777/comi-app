@@ -198,6 +198,48 @@ export function calcularLucroLinha(linha: LinhaVenda): number {
   })
 }
 
+/**
+ * Calcula os detalhes completos de uma linha de venda (totais unitários e totais de linha)
+ */
+export function calcularDetalhesLinha(linha: any) {
+  const quantidade = Number(linha.quantidade) || 0
+  
+  // 1. Calcular Preço de Venda Unitário Base (depende do método)
+  let precoVendaUnitarioBase = 0
+  
+  switch (linha.metodo_calculo) {
+    case 'manual':
+      precoVendaUnitarioBase = (Number(linha.preco_custo) || 0) + (Number(linha.lucro_manual) || 0)
+      break
+    case 'margem_custo':
+      if (linha.preco_custo && linha.percentagem_custo) {
+        precoVendaUnitarioBase = (Number(linha.preco_custo) || 0) * (1 + (Number(linha.percentagem_custo) || 0) / 100)
+      }
+      break
+    case 'margem_venda':
+      precoVendaUnitarioBase = Number(linha.preco_venda) || 0
+      break
+  }
+
+  // 2. Aplicar Desconto se existir
+  const percentagemDesconto = Number(linha.percentagem_desconto) || 0
+  const precoVendaUnitarioFinal = precoVendaUnitarioBase * (1 - percentagemDesconto / 100)
+  
+  // 3. Totais
+  const totalVendaLine = precoVendaUnitarioFinal * quantidade
+  const totalCustoLine = (Number(linha.preco_custo) || 0) * quantidade
+  const lucroLine = totalVendaLine - totalCustoLine
+  
+  return {
+    precoVendaUnitarioBase,
+    precoVendaUnitarioFinal,
+    totalVenda: totalVendaLine,
+    totalCusto: totalCustoLine,
+    lucro: lucroLine,
+    comissao: (linha.comissao_calculada !== undefined) ? linha.comissao_calculada : 0
+  }
+}
+
 // =====================================================
 // VALIDAÇÕES
 // =====================================================

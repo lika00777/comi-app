@@ -172,20 +172,35 @@ export default async function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {stats.map((stat) => (
-          <Card key={stat.title}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-600">
+          <Card key={stat.title} className="relative overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-white/50 backdrop-blur-sm shadow-sm ring-1 ring-gray-200">
+            <div className={`absolute top-0 right-0 w-32 h-32 -mr-8 -mt-8 rounded-full opacity-5 pointer-events-none transition-transform group-hover:scale-110 ${
+              stat.variant === 'success' ? 'bg-green-500' : 
+              stat.variant === 'warning' ? 'bg-amber-500' : 
+              stat.variant === 'danger' ? 'bg-red-500' : 
+              'bg-blue-500'
+            }`} />
+            <CardHeader className="flex flex-row items-center justify-between pb-2 relative z-10">
+              <CardTitle className="text-sm font-semibold text-gray-500 uppercase tracking-wider">
                 {stat.title}
               </CardTitle>
-              <stat.icon className="h-5 w-5 text-gray-400" />
+              <div className={`p-2 rounded-xl ${
+                stat.variant === 'success' ? 'bg-green-50 text-green-600' : 
+                stat.variant === 'warning' ? 'bg-amber-50 text-amber-600' : 
+                stat.variant === 'danger' ? 'bg-red-50 text-red-600' : 
+                'bg-blue-50 text-blue-600'
+              }`}>
+                <stat.icon className="h-5 w-5" />
+              </div>
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-gray-900">
+            <CardContent className="relative z-10">
+              <div className="text-3xl font-bold text-gray-900 tracking-tight">
                 {formatCurrency(stat.value)}
               </div>
-              <Badge variant={stat.variant} className="mt-2">
-                {stat.description}
-              </Badge>
+              <div className="flex items-center mt-3">
+                <Badge variant={stat.variant} className="rounded-lg px-2 py-0.5 font-medium text-[10px] uppercase tracking-wide">
+                  {stat.description}
+                </Badge>
+              </div>
             </CardContent>
           </Card>
         ))}

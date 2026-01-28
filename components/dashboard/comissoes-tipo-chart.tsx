@@ -22,7 +22,15 @@ interface Props {
   data: DadosTipo[]
 }
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d']
+const COLORS = [
+  '#3b82f6', // Premium Blue
+  '#10b981', // Emerald
+  '#f59e0b', // Amber
+  '#ef4444', // Red
+  '#8b5cf6', // Violet
+  '#ec4899', // Pink
+  '#06b6d4', // Cyan
+]
 
 export function ComissoesTipoChart({ data }: Props) {
   if (!data || data.length === 0) {
@@ -51,20 +59,30 @@ export function ComissoesTipoChart({ data }: Props) {
                 data={data}
                 cx="50%"
                 cy="50%"
-                labelLine={false}
+                innerRadius={60}
                 outerRadius={100}
-                fill="#8884d8"
+                paddingAngle={5}
                 dataKey="valor"
                 nameKey="tipo"
               >
                 {data.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  <Cell 
+                    key={`cell-${index}`} 
+                    fill={COLORS[index % COLORS.length]}
+                    stroke="none"
+                  />
                 ))}
               </Pie>
               <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'rgba(255, 255, 255, 0.9)', 
+                  borderRadius: '12px', 
+                  border: 'none', 
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' 
+                }}
                 formatter={(value: any) => formatarValor(Number(value) || 0)}
               />
-              <Legend verticalAlign="bottom" height={36}/>
+              <Legend verticalAlign="bottom" height={36} iconType="circle" />
             </PieChart>
           </ResponsiveContainer>
         </div>

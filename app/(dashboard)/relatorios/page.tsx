@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { formatarValor } from '@/lib/calculos/lucro'
+import { formatarValor, calcularDetalhesLinha } from '@/lib/calculos/lucro'
 import { Alert } from '@/components/ui/alert'
 import { Download, FileBarChart, Calendar, FileSpreadsheet } from 'lucide-react'
 import { PagamentoRecebido, LinhaVenda } from '@/types/database'
@@ -142,25 +142,18 @@ export default function RelatoriosPage() {
       if (!venda.linhas_venda || !Array.isArray(venda.linhas_venda)) return
 
       venda.linhas_venda.forEach(linha => {
-        // Calcular valor de venda da linha (pode variar conforme método)
-        let valorVendaLinha = 0
-        if (linha.preco_venda) {
-          valorVendaLinha = linha.preco_venda * linha.quantidade
-        } else {
-          // Fallback se for margem sobre custo: custo + lucro
-          valorVendaLinha = ( (linha.preco_custo || 0) + (linha.lucro_calculado / linha.quantidade) ) * linha.quantidade
-        }
-
+        const detalhes = calcularDetalhesLinha(linha)
+        
         data.push({
           'DATA': new Date(venda.data_venda).toLocaleDateString('pt-PT'),
           'Cliente': venda.cliente_nome,
           'FATURA': venda.numero_fatura,
-          'CUSTO': linha.preco_custo ? `${linha.preco_custo.toFixed(2)} €` : '0.00 €',
+          'CUSTO': detalhes.totalCusto ? `${detalhes.totalCusto.toFixed(2)} €` : '0.00 €',
           'NEGÓCIO FECHADO': linha.artigo,
-          'VALOR': `${valorVendaLinha.toFixed(2)} €`,
-          'Valor/Comiss': `${linha.lucro_calculado.toFixed(2)} €`,
+          'VALOR': `${detalhes.totalVenda.toFixed(2)} €`,
+          'Valor/Comiss': `${detalhes.lucro.toFixed(2)} €`,
           'COMISSÃO (%)': `${linha.percentagem_comissao_snapshot.toFixed(1)}%`,
-          'COMISSÃO TOTAL': `${linha.comissao_calculada.toFixed(2)} €`,
+          'COMISSÃO TOTAL': `${detalhes.comissao.toFixed(2)} €`,
           'PAGO CO': venda.estado.charAt(0).toUpperCase() + venda.estado.slice(1)
         })
       })
@@ -240,54 +233,58 @@ export default function RelatoriosPage() {
       </div>
 
       {/* Cards de KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card className="border-none shadow-sm ring-1 ring-gray-200 bg-white/50 backdrop-blur-sm overflow-hidden hover:shadow-md transition-all">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">
+            <CardTitle className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
               Total Vendas
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{formatarValor(totalVendido)}</div>
-            <p className="text-xs text-gray-500 mt-1">no período selecionado</p>
+            <div className="text-3xl font-bold text-gray-900 tracking-tight">{formatarValor(totalVendido)}</div>
+            <p className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+              <Calendar className="w-3 h-3" /> no período selecionado
+            </p>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border-none shadow-sm ring-1 ring-gray-200 bg-white/50 backdrop-blur-sm overflow-hidden hover:shadow-md transition-all">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">
+            <CardTitle className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
               Lucro Total
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-gray-700">{formatarValor(totalLucro)}</div>
-            <div className="text-xs text-green-600 mt-1">
-              margem média: {totalVendido > 0 ? ((totalLucro / totalVendido) * 100).toFixed(1) : 0}%
+            <div className="text-3xl font-bold text-gray-900 tracking-tight">{formatarValor(totalLucro)}</div>
+            <div className="mt-2">
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-green-50 text-green-600 ring-1 ring-green-100">
+                margem média: {totalVendido > 0 ? ((totalLucro / totalVendido) * 100).toFixed(1) : 0}%
+              </span>
             </div>
           </CardContent>
         </Card>
         
-        <Card>
+        <Card className="border-none shadow-sm ring-1 ring-gray-200 bg-white/50 backdrop-blur-sm overflow-hidden hover:shadow-md transition-all">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">
+            <CardTitle className="text-sm font-semibold text-gray-400 uppercase tracking-wider">
               Comissão Gerada
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{formatarValor(totalComissao)}</div>
-            <p className="text-xs text-gray-500 mt-1">{vendas.length} vendas registadas</p>
+            <div className="text-3xl font-bold text-blue-600 tracking-tight">{formatarValor(totalComissao)}</div>
+            <p className="text-xs text-gray-500 mt-2">{vendas.length} vendas registadas</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-green-50 border-green-100">
+        <Card className="border-none shadow-sm ring-1 ring-gray-200 bg-green-50/50 backdrop-blur-sm overflow-hidden hover:shadow-md transition-all">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-green-700">
+            <CardTitle className="text-sm font-semibold text-green-700 uppercase tracking-wider">
               Pagamentos Recebidos
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-700">{formatarValor(totalRecebido)}</div>
-            <p className="text-xs text-green-600 mt-1">{pagamentos.length} pagamentos</p>
+            <div className="text-3xl font-bold text-green-700 tracking-tight">{formatarValor(totalRecebido)}</div>
+            <p className="text-xs text-green-600 mt-2">{pagamentos.length} pagamentos</p>
           </CardContent>
         </Card>
       </div>

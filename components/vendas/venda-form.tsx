@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Alert } from '@/components/ui/alert'
 import { Trash2, Plus, Calculator } from 'lucide-react'
-import { calcularLucro, formatarValor, calcularLucroMargemCusto } from '@/lib/calculos/lucro'
+import { calcularLucro, formatarValor, calcularLucroMargemCusto, calcularDetalhesLinha } from '@/lib/calculos/lucro'
 import { calcularComissao } from '@/lib/calculos/comissao'
 import ExtrairVendaModal from './extrair-venda-modal'
 import ValidacaoVendaModal from './validacao-venda-modal'
@@ -187,42 +187,20 @@ export default function VendaForm({ vendaInicial, modoEdicao = false }: VendaFor
             percentagem_desconto: Number(linhaAtualizada.percentagem_desconto)
           })
           
-          linhaAtualizada.lucro_calculado = lucro
+          const detalhes = calcularDetalhesLinha(linhaAtualizada)
           
+          linhaAtualizada.lucro_calculado = detalhes.lucro
+          linhaAtualizada.preco_venda_calculado = detalhes.precoVendaUnitarioFinal
+          linhaAtualizada.total_linha = detalhes.totalVenda
+
           const tipo = tiposArtigo.find(t => t.id === linhaAtualizada.tipo_artigo_id)
           if (tipo) {
             // Se o tipo mudou, atualiza o snapshot para a percentagem atual do novo tipo
             if (campo === 'tipo_artigo_id') {
               linhaAtualizada.percentagem_comissao_snapshot = tipo.percentagem_comissao
             }
-            linhaAtualizada.comissao_calculada = calcularComissao(lucro, linhaAtualizada.percentagem_comissao_snapshot)
+            linhaAtualizada.comissao_calculada = calcularComissao(detalhes.lucro, linhaAtualizada.percentagem_comissao_snapshot)
           }
-
-          // Calcular Preço de Venda Unitário e Total Linha
-          let precoUnitario = 0
-
-          switch (linhaAtualizada.metodo_calculo) {
-            case 'manual':
-              // Se tiver custo e lucro, usa soma. Se não, assume lucro (ex: serviço sem custo)
-              precoUnitario = (Number(linhaAtualizada.preco_custo) || 0) + (Number(linhaAtualizada.lucro_manual) || 0)
-              break
-            case 'margem_custo':
-              if (linhaAtualizada.preco_custo && linhaAtualizada.percentagem_custo) {
-                const res = calcularLucroMargemCusto(
-                  Number(linhaAtualizada.preco_custo), 
-                  Number(linhaAtualizada.percentagem_custo), 
-                  1
-                )
-                precoUnitario = res.preco_venda
-              }
-              break
-            case 'margem_venda':
-              precoUnitario = Number(linhaAtualizada.preco_venda) || 0
-              break
-          }
-
-          linhaAtualizada.preco_venda_calculado = precoUnitario * (1 - (Number(linhaAtualizada.percentagem_desconto) || 0) / 100)
-          linhaAtualizada.total_linha = linhaAtualizada.preco_venda_calculado * quantidade
         } else {
           linhaAtualizada.lucro_calculado = 0
           linhaAtualizada.comissao_calculada = 0
@@ -357,6 +335,14 @@ export default function VendaForm({ vendaInicial, modoEdicao = false }: VendaFor
       const precoCusto = item.preco_custo || 0
       const lucroManual = item.preco_unitario - precoCusto
       
+      const detalhes = calcularDetalhesLinha({
+        quantidade: item.quantidade,
+        metodo_calculo: 'manual',
+        preco_custo: precoCusto,
+        lucro_manual: lucroManual,
+        percentagem_desconto: 0
+      })
+      
       return {
         id,
         artigo: item.artigo,
@@ -366,10 +352,10 @@ export default function VendaForm({ vendaInicial, modoEdicao = false }: VendaFor
         preco_custo: precoCusto,
         lucro_manual: lucroManual,
         percentagem_desconto: 0,
-        lucro_calculado: lucroManual * item.quantidade,
-        comissao_calculada: calcularComissao(lucroManual * item.quantidade, tipo?.percentagem_comissao || 0),
-        preco_venda_calculado: item.preco_unitario,
-        total_linha: item.preco_unitario * item.quantidade,
+        lucro_calculado: detalhes.lucro,
+        comissao_calculada: calcularComissao(detalhes.lucro, tipo?.percentagem_comissao || 0),
+        preco_venda_calculado: detalhes.precoVendaUnitarioFinal,
+        total_linha: detalhes.totalVenda,
         percentagem_comissao_snapshot: tipo?.percentagem_comissao || 0
       }
     })

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Alert } from '@/components/ui/alert'
 import { Plus, Search, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
-import { formatarValor } from '@/lib/calculos/lucro'
+import { formatarValor, calcularDetalhesLinha } from '@/lib/calculos/lucro'
 
 // Extended type with lines
 interface VendaComLinhas extends Venda {
@@ -202,31 +202,8 @@ export default function VendasPage() {
         </Card>
       ) : (
         <div className="space-y-4">
-          {filteredVendas.map((venda) => {
-            // Calcular totais das linhas
-            const totaisLinhas = venda.linhas_venda?.reduce((acc, linha) => {
-              let precoVendaUnitario = 0
-              if (linha.metodo_calculo === 'manual') {
-                precoVendaUnitario = (linha.preco_custo || 0) + (linha.lucro_manual || 0)
-              } else if (linha.metodo_calculo === 'margem_custo' && linha.preco_custo && linha.percentagem_custo) {
-                const lucroUnitario = linha.preco_custo * (linha.percentagem_custo / 100)
-                precoVendaUnitario = linha.preco_custo + lucroUnitario
-              } else if (linha.metodo_calculo === 'margem_venda') {
-                precoVendaUnitario = linha.preco_venda || 0
-              }
-
-              const precoComDesconto = precoVendaUnitario * (1 - (linha.percentagem_desconto || 0) / 100)
-              const totalVenda = precoComDesconto * linha.quantidade
-              const totalCusto = (linha.preco_custo || 0) * linha.quantidade
-
-              return {
-                custo: acc.custo + totalCusto,
-                venda: acc.venda + totalVenda
-              }
-            }, { custo: 0, venda: 0 }) || { custo: 0, venda: 0 }
-
-            return (
-              <Card key={venda.id} className="overflow-hidden">
+          {filteredVendas.map((venda) => (
+            <Card key={venda.id} className="overflow-hidden">
                 {/* Cabeçalho da Venda */}
                 <div className="bg-gray-50 border-b px-6 py-4">
                   <div className="flex items-center justify-between">
@@ -310,19 +287,7 @@ export default function VendasPage() {
                         </thead>
                         <tbody className="divide-y divide-gray-100">
                           {venda.linhas_venda.map((linha, idx) => {
-                            let precoVendaUnitario = 0
-                            if (linha.metodo_calculo === 'manual') {
-                              precoVendaUnitario = (linha.preco_custo || 0) + (linha.lucro_manual || 0)
-                            } else if (linha.metodo_calculo === 'margem_custo' && linha.preco_custo && linha.percentagem_custo) {
-                              const lucroUnitario = linha.preco_custo * (linha.percentagem_custo / 100)
-                              precoVendaUnitario = linha.preco_custo + lucroUnitario
-                            } else if (linha.metodo_calculo === 'margem_venda') {
-                              precoVendaUnitario = linha.preco_venda || 0
-                            }
-
-                            const precoComDesconto = precoVendaUnitario * (1 - (linha.percentagem_desconto || 0) / 100)
-                            const totalVenda = precoComDesconto * linha.quantidade
-                            const totalCusto = (linha.preco_custo || 0) * linha.quantidade
+                            const detalhes = calcularDetalhesLinha(linha)
 
                             return (
                               <tr key={linha.id || idx} className="hover:bg-gray-50">
@@ -332,22 +297,22 @@ export default function VendasPage() {
                                   {linha.tipo_artigo_id ? 'configurado' : '-'}
                                 </td>
                                 <td className="px-4 py-3 text-right font-mono text-gray-700">
-                                  {formatarValor(totalCusto)}
+                                  {formatarValor(detalhes.totalCusto)}
                                 </td>
                                 <td className="px-4 py-3 text-right font-mono font-medium text-gray-900">
-                                  {formatarValor(totalVenda)}
+                                  {formatarValor(detalhes.totalVenda)}
                                   {linha.percentagem_desconto ? (
                                     <span className="text-xs text-orange-600 ml-1">(-{linha.percentagem_desconto}%)</span>
                                   ) : null}
                                 </td>
-                                <td className={`px-4 py-3 text-right font-mono ${linha.lucro_calculado < 0 ? 'text-red-600' : 'text-green-700'}`}>
-                                  {formatarValor(linha.lucro_calculado)}
+                                <td className={`px-4 py-3 text-right font-mono ${detalhes.lucro < 0 ? 'text-red-600' : 'text-green-700'}`}>
+                                  {formatarValor(detalhes.lucro)}
                                 </td>
                                 <td className="px-4 py-3 text-right text-gray-600">
                                   {linha.percentagem_comissao_snapshot}%
                                 </td>
                                 <td className="px-4 py-3 text-right font-mono font-bold text-blue-600">
-                                  {formatarValor(linha.comissao_calculada)}
+                                  {formatarValor(detalhes.comissao)}
                                 </td>
                               </tr>
                             )
@@ -356,8 +321,12 @@ export default function VendasPage() {
                         <tfoot className="bg-gray-50 font-semibold">
                           <tr>
                             <td colSpan={3} className="px-6 py-3 text-right text-gray-700">Totais:</td>
-                            <td className="px-4 py-3 text-right font-mono text-gray-900">{formatarValor(totaisLinhas.custo)}</td>
-                            <td className="px-4 py-3 text-right font-mono text-gray-900">{formatarValor(totaisLinhas.venda)}</td>
+                            <td className="px-4 py-3 text-right font-mono text-gray-900">
+                              {formatarValor(venda.linhas_venda.reduce((s, l) => s + (calcularDetalhesLinha(l).totalCusto), 0))}
+                            </td>
+                            <td className="px-4 py-3 text-right font-mono text-gray-900">
+                              {formatarValor(venda.linhas_venda.reduce((s, l) => s + (calcularDetalhesLinha(l).totalVenda), 0))}
+                            </td>
                             <td className="px-4 py-3 text-right font-mono text-green-700">{formatarValor(venda.lucro_total)}</td>
                             <td className="px-4 py-3"></td>
                             <td className="px-4 py-3 text-right font-mono font-bold text-blue-600">{formatarValor(venda.comissao_total)}</td>
@@ -373,7 +342,7 @@ export default function VendasPage() {
                 </CardContent>
               </Card>
             )
-          })}
+          )}
         </div>
       )}
     </div>
