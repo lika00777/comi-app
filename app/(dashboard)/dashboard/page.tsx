@@ -18,7 +18,11 @@ export default async function DashboardPage() {
   if (!user) return null
   
   // Verificar e gerar alertas se necessário
-  await verificarAlertasCobranca(user.id)
+  try {
+    await verificarAlertasCobranca(user.id)
+  } catch (err) {
+    console.error('Erro ao verificar alertas de cobrança:', err)
+  }
   
   // Buscar Vendas
   const { data: vendasResult } = await supabase
